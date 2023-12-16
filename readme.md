@@ -4,7 +4,7 @@ simple build tool for small OCaml projects
 ## Usage
 - `cbt init <project name>` to create a new project
 - `cbt build` to build it
-- `cbt install` to install it on your system
+- `cbt install` to install it on your system<br><br>
 it is that simple<br>
 to see more details on each command, add `help` after it
 > note: good luck with naming your project "help"!
