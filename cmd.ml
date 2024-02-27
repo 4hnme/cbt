@@ -1,19 +1,21 @@
 open Base
 
 type prefix = string
-type flag = string
 type value = string
-type t = prefix * (flag * value) list
+type name = string
+type flag = Fsingle of string | Fdouble of string * value
+type t = prefix * (flag list)
 
 let empty : t = "ocamlfind ocamlopt -I _build", []
 
-let add_flag (flag : (string * string) option) (prefix, flags) : t =
+let add_flag (flag : flag option) (prefix, flags) : t =
   match flag with
-  | Some (name, value) -> prefix, (name, value) :: flags
+  | Some (Fdouble (name, value)) -> prefix, (Fdouble (name, value) :: flags)
+  | Some (Fsingle name) -> prefix, (Fsingle name) :: flags
   | None -> prefix, flags
 ;;
 
-let add_flags (flagl : (string * string) list option) cmd =
+let add_flags (flagl : flag list option) cmd =
   match flagl with
   | Some fls -> List.fold ~init:cmd ~f:(fun c fl -> add_flag (Some fl) c) fls
   | None -> cmd
@@ -22,7 +24,13 @@ let add_flags (flagl : (string * string) list option) cmd =
 let to_string (prefix, flags) =
   let fs = List.rev flags in
   let flags_str =
-    List.fold ~init:"" ~f:(fun a (f, v) -> a ^ " " ^ f ^ " " ^ v) fs
+    List.fold ~init:"" ~f:(fun a flag ->
+      match flag with
+      | Fsingle name ->
+        a ^ " " ^ name
+      | Fdouble (name, value) ->
+        a ^ " " ^ name ^ " " ^ value
+    ) fs
   in
   prefix ^ flags_str
 ;;

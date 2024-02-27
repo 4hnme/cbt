@@ -6,22 +6,20 @@ type t =
   ; name : string
   }
 
-let empty = ""
-
 let create main name = { main; name }
 let filename = "/proj.cbt"
 
 let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
-  let output = Some ("-o", proj.name ^ ".exe") in
+  let output = Some (Cmd.Fdouble ("-o", proj.name ^ ".exe")) in
   let packages =
     match List.length proj.main.libs with
     | 0 -> None
     | _ ->
-      let prefix = "-linkpkg", empty in
+      let prefix = Cmd.Fsingle "-linkpkg" in
       let packages = List.map ~f:(fun l ->
         match l with
-        | "threads" -> "-thread", empty
-        | x -> "-package", x
+        | "threads" -> Cmd.Fsingle "threads"
+        | x -> Cmd.Fdouble ("-package", x)
       ) proj.main.libs in
       Some (prefix :: packages)
   in
@@ -38,7 +36,7 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
       Cmd.empty
       |> Cmd.add_flags packages
       |> Cmd.add_flag output
-      |> Cmd.add_flag (Some ("", modules ^ proj.main.name ^ ".cmx"))
+      |> Cmd.add_flag (Some (Cmd.Fdouble ("", modules ^ proj.main.name ^ ".cmx")))
       |> Cmd.to_string
     in
     printf "compiling project...\n";

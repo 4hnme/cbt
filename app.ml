@@ -27,10 +27,10 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) =
     let packages =
       match a.libs with
       | [] -> None
-      | _ -> Some (List.map ~f:(fun l -> "-package", l) a.libs)
+      | _ -> Some (List.map ~f:(fun l -> Cmd.Fdouble ("-package", l)) a.libs)
     in
-    let into_module = Some ("-c", a.name ^ ".ml") in
-    let output = Some ("-o", "_build/" ^ a.name ^ ".cmx") in
+    let into_module = Some (Cmd.Fdouble ("-c", a.name ^ ".ml")) in
+    let output = Some (Cmd.Fdouble ("-o", "_build/" ^ a.name ^ ".cmx")) in
     let cmd =
       Cmd.empty
       |> Cmd.add_flags packages
