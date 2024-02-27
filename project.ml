@@ -48,6 +48,7 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
       |> Cmd.to_string
     in
     printf "compiling project...\n";
+    if (show_cmd) then printf "\tcompile command: %s\n" cmd;
     let c = Unix.open_process_in cmd in
     (match Unix.close_process_in c with
      | Unix.WEXITED 0 -> Unix.rename (proj.name ^ ".exe") proj.name

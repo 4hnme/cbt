@@ -54,10 +54,7 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already
       |> Cmd.to_string
     in
     printf "compiling %s.ml...\n" a.name;
-    let () = match show_cmd with
-    | true -> printf "\tcompile command: %s\n" cmd
-    | false -> ()
-    in
+    if (show_cmd) then printf "\tcompile command: %s\n" cmd;
     Out_channel.flush stdout;
     let process = Unix.open_process_in cmd in
     let exit_code, compiled_modules =
