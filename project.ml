@@ -19,7 +19,7 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
       let prefix = Cmd.Fsingle "-linkpkg" in
       let packages = List.map ~f:(fun l ->
         match l with
-        | "threads" -> Cmd.Fsingle "threads"
+        | "threads" -> Cmd.Fsingle "-thread"
         | x -> Cmd.Fdouble ("-package", x)
       ) proj.main.libs in
       Some (prefix :: packages)
@@ -44,7 +44,7 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
       Cmd.empty
       |> Cmd.add_flags packages
       |> Cmd.add_flag output
-      |> Cmd.add_flag (Some (Cmd.Fdouble ("", modules ^ proj.main.name ^ ".cmx")))
+      |> Cmd.add_flag (Some (Cmd.Fsingle (modules ^ proj.main.name ^ ".cmx")))
       |> Cmd.to_string
     in
     printf "compiling project...\n";
