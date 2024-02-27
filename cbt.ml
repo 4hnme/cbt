@@ -42,8 +42,9 @@ let () =
       "|~~~~~~~~~~|\n\
        |soft-build|\n\
        |~~~~~~~~~~|\n\
-       tries to compile project \"softly\". usually breaks, doesn't work \
-       properly yet\n"
+       tries to compile project \"softly\". usually breaks, hopefully now it works \
+       properly\n\
+       use \"soft-build show\" to show generated build commands during the compilation\n"
   | [| _; "build"; "help" |] ->
     printf
       "|~~~~~|\n\
@@ -55,6 +56,9 @@ let () =
   | [| _; "soft-build" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:false proj
+  | [| _; "soft-build"; "show" |] ->
+    let proj = Project.from_file proj_file in
+    Project.compile ~force:false ~show_cmd:true proj
   | [| _; "build" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:false proj

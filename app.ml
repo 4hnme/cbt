@@ -12,17 +12,32 @@ let set_name name a = { a with name }
 let add_lib l a = { a with libs = l :: a.libs }
 let add_module m a = { a with modules = m :: a.modules }
 
-let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) =
+let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already_compiled = []) =
   let ml_modification = (Unix.stat (a.name ^ ".ml")).st_mtime in
   let cmx_modification =
     match Unix.stat ("_build/" ^ a.name ^ ".cmx") with
     | s -> s.st_mtime
     | exception _ -> 0.0
   in
+  let is_source_file_updated = Float.is_positive (ml_modification -. cmx_modification) in
   let submodules_compiled =
-    List.map ~f:(compile ~force ~show_cmd) a.modules |> List.fold ~init:0 ~f:( + )
+    List.fold ~init:already_compiled
+              ~f:(fun acc sub -> compile ~force ~show_cmd ~already_compiled:acc sub)
+              a.modules
   in
-  match Float.is_positive (ml_modification -. cmx_modification) || force with
+  let was_any_submodule_compiled =
+    List.fold ~init:false
+              ~f:(fun acc subm ->
+                acc || match List.find ~f:(fun comp -> String.equal comp subm.name) submodules_compiled with
+                | Some _ -> true
+                | None -> false
+              ) a.modules
+  in
+  let is_already_compiled = match List.find ~f:(fun name -> String.equal name a.name) already_compiled with
+  | Some _ -> true
+  | None -> false
+  in
+  match ((not is_already_compiled) && (is_source_file_updated || was_any_submodule_compiled)) || force with
   | true ->
     let packages =
       match a.libs with
@@ -45,19 +60,20 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) =
     in
     Out_channel.flush stdout;
     let process = Unix.open_process_in cmd in
-    let exit_code =
+    let exit_code, compiled_modules =
       match Unix.close_process_in process with
       | Unix.WEXITED 1 ->
         printf "couldn't compile %s\n" a.name;
         Out_channel.flush stdout;
-        1
-      | Unix.WEXITED x -> x
+        1, submodules_compiled
+      | Unix.WEXITED x ->
+        x, a.name :: submodules_compiled
       | _ ->
         printf "something went wrong...";
-        1
+        1, submodules_compiled
     in
-    submodules_compiled + (if (Int.equal exit_code 0) then 1 else 0)
-  | _ ->
+    compiled_modules
+  | false ->
     printf "no updates in %s, skip\n" a.name;
     Out_channel.flush stdout;
     submodules_compiled

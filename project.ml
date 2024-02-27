@@ -30,9 +30,16 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
       ~f:(fun a m -> a ^ m.name ^ ".cmx" ^ " ")
       proj.main.modules
   in
-  match App.compile ~force ~show_cmd proj.main with
-  | 0 -> printf "had to compile nothing, lmao\n"
-  | _ ->
+  let compiled_modules = App.compile ~force ~show_cmd proj.main ~already_compiled:[] in
+  let output_file_exists = match Unix.access proj.name [Unix.F_OK] with
+  | () -> true
+  | exception Unix.Unix_error (Unix.ENOENT, _, _) -> false
+  in
+  match List.length compiled_modules, output_file_exists with
+  | 0, true -> printf "had to do nothing\n"
+  | _, _ ->
+    if (not output_file_exists) then
+      printf "everything is already up to date but the executable file is missing\n";
     let cmd =
       Cmd.empty
       |> Cmd.add_flags packages
