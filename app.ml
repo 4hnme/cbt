@@ -44,13 +44,19 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) =
     | false -> ()
     in
     Out_channel.flush stdout;
-    let c = Unix.open_process_in cmd in
-    let () =
-      match Unix.close_process_in c with
-      | Unix.WEXITED _ -> ()
-      | _ -> printf "something went wrong..."
+    let process = Unix.open_process_in cmd in
+    let exit_code =
+      match Unix.close_process_in process with
+      | Unix.WEXITED 1 ->
+        printf "couldn't compile %s\n" a.name;
+        Out_channel.flush stdout;
+        1
+      | Unix.WEXITED x -> x
+      | _ ->
+        printf "something went wrong...";
+        1
     in
-    submodules_compiled + 1
+    submodules_compiled + (if (Int.equal exit_code 0) then 1 else 0)
   | _ ->
     printf "no updates in %s, skip\n" a.name;
     Out_channel.flush stdout;

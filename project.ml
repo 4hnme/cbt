@@ -39,8 +39,11 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
     printf "compiling project...\n";
     let c = Unix.open_process_in cmd in
     (match Unix.close_process_in c with
-     | Unix.WEXITED _ -> Unix.rename (proj.name ^ ".exe") proj.name
-     | _ | (exception _) -> printf "something went wrong during compiling...\n")
+     | Unix.WEXITED 0 -> Unix.rename (proj.name ^ ".exe") proj.name
+     | Unix.WEXITED code ->
+     printf "couldn't link project, subprocess returned %d \
+             (probably missing some dependencies?)\n" code
+     | _ | (exception _) -> printf "something went wrong during compilation...\n")
 ;;
 
 let from_file path =
