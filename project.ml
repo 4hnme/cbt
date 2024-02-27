@@ -28,7 +28,6 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
   match App.compile ~force ~show_cmd proj.main with
   | 0 -> printf "had to compile nothing, lmao\n"
   | _ ->
-    ();
     let cmd =
       Cmd.empty
       |> Cmd.add_flags packages
