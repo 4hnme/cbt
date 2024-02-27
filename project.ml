@@ -6,6 +6,8 @@ type t =
   ; name : string
   }
 
+let empty = ""
+
 let create main name = { main; name }
 let filename = "/proj.cbt"
 
@@ -15,8 +17,12 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
     match List.length proj.main.libs with
     | 0 -> None
     | _ ->
-      let prefix = "-linkpkg", "" in
-      let packages = List.map ~f:(fun l -> "-package", l) proj.main.libs in
+      let prefix = "-linkpkg", empty in
+      let packages = List.map ~f:(fun l ->
+        match l with
+        | "threads" -> "-thread", empty
+        | x -> "-package", x
+      ) proj.main.libs in
       Some (prefix :: packages)
   in
   let modules =
