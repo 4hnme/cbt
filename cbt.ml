@@ -19,33 +19,38 @@ let () =
   match Sys.get_argv () with
   | [| _; "init"; "help" |] ->
     printf
-      "~~~~\n\
-       init\n\
-       ~~~~\n\
+      "|~~~~|\n\
+       |init|\n\
+       |~~~~|\n\
        creates a new project directory. template is not custimizible yet\n"
   | [| _; "install"; "help" |] ->
     printf
-      "~~~~~~~\n\
-       install\n\
-       ~~~~~~~\n\
+      "|~~~~~~~|\n\
+       |install|\n\
+       |~~~~~~~|\n\
        copies executable file into /usr/bin directory. path is customizible yet\n"
   | [| _; "drop-merlin"; "help" |] ->
     printf
-      "~~~~~~~~~~~\n\
-       drop-merlin\n\
-       ~~~~~~~~~~~\n\
+      "|~~~~~~~~~~~|\n\
+       |drop-merlin|\n\
+       |~~~~~~~~~~~|\n\
        create a .merlin file in the folder for better lsp integration. it \
        won't hurt to do \"touch dune-workspace\" either because \
        https://github.com/ocaml/ocaml-lsp/pull/1173\n"
   | [| _; "soft-build"; "help" |] ->
     printf
-      "~~~~~~~~~~\n\
-       soft-build\n\
-       ~~~~~~~~~~\n\
+      "|~~~~~~~~~~|\n\
+       |soft-build|\n\
+       |~~~~~~~~~~|\n\
        tries to compile project \"softly\". usually breaks, doesn't work \
        properly yet\n"
   | [| _; "build"; "help" |] ->
-    printf "~~~~~\nbuild\n~~~~~\nsimply rebuilds the current project\n"
+    printf
+      "|~~~~~|\n\
+       |build|\n\
+       |~~~~~|\n\
+       simply rebuilds the current project\n\
+       use \"build show\" to show generated build commands during the compilation\n"
   | [| _; "init"; name |] -> Project.init name
   | [| _; "soft-build" |] ->
     let proj = Project.from_file proj_file in
@@ -63,8 +68,15 @@ let () =
       Unix.open_process_in
         ("sudo cp ./" ^ proj.main.name ^ " /usr/bin/" ^ proj.main.name)
     in
-    let _ = Unix.close_process_in c in
-    ()
+    let () = match Unix.close_process_in c with
+    | Unix.WEXITED 0 ->
+      let proj = Project.from_file proj_file in
+      printf "installed %s in /usr/bin/%s\n" proj.name proj.name
+    | Unix.WEXITED _ ->
+      let proj = Project.from_file proj_file in
+      printf "failed to install %s...\n" proj.name
+    | _ -> printf "something went horribly wrong..."
+    in ()
   | [| _; "drop-merlin" |] ->
     let proj = Project.from_file proj_file in
     Project.drop_merlin proj
