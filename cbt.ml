@@ -49,13 +49,16 @@ let () =
   | [| _; "init"; name |] -> Project.init name
   | [| _; "soft-build" |] ->
     let proj = Project.from_file proj_file in
-    Project.compile ~force:false proj
+    Project.compile ~force:false ~show_cmd:false proj
   | [| _; "build" |] ->
     let proj = Project.from_file proj_file in
-    Project.compile ~force:true proj
+    Project.compile ~force:true ~show_cmd:false proj
+  | [| _; "build"; "show" |] ->
+    let proj = Project.from_file proj_file in
+    Project.compile ~force:true ~show_cmd:true proj
   | [| _; "install" |] ->
     let proj = Project.from_file proj_file in
-    Project.compile ~force:true proj;
+    Project.compile ~force:true ~show_cmd:false proj;
     let c =
       Unix.open_process_in
         ("sudo cp ./" ^ proj.main.name ^ " /usr/bin/" ^ proj.main.name)

@@ -9,7 +9,7 @@ type t =
 let create main name = { main; name }
 let filename = "/proj.cbt"
 
-let[@warning "-16"] compile proj ?(force = false) =
+let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
   let output = Some ("-o", proj.name ^ ".exe") in
   let packages =
     match List.length proj.main.libs with
@@ -25,7 +25,7 @@ let[@warning "-16"] compile proj ?(force = false) =
       ~f:(fun a m -> a ^ m.name ^ ".cmx" ^ " ")
       proj.main.modules
   in
-  match App.compile ~force proj.main with
+  match App.compile ~force ~show_cmd proj.main with
   | 0 -> printf "had to compile nothing, lmao\n"
   | _ ->
     ();

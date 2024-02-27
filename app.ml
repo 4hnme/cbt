@@ -12,7 +12,7 @@ let set_name name a = { a with name }
 let add_lib l a = { a with libs = l :: a.libs }
 let add_module m a = { a with modules = m :: a.modules }
 
-let[@warning "-16"] rec compile a ?(force = false) =
+let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) =
   let ml_modification = (Unix.stat (a.name ^ ".ml")).st_mtime in
   let cmx_modification =
     match Unix.stat ("_build/" ^ a.name ^ ".cmx") with
@@ -20,7 +20,7 @@ let[@warning "-16"] rec compile a ?(force = false) =
     | exception _ -> 0.0
   in
   let submodules_compiled =
-    List.map ~f:(compile ~force) a.modules |> List.fold ~init:0 ~f:( + )
+    List.map ~f:(compile ~force ~show_cmd) a.modules |> List.fold ~init:0 ~f:( + )
   in
   match Float.is_positive (ml_modification -. cmx_modification) || force with
   | true ->
@@ -39,6 +39,10 @@ let[@warning "-16"] rec compile a ?(force = false) =
       |> Cmd.to_string
     in
     printf "compiling %s.ml...\n" a.name;
+    let () = match show_cmd with
+    | true -> printf "\tcompile command: %s\n" cmd
+    | false -> ()
+    in
     Out_channel.flush stdout;
     let c = Unix.open_process_in cmd in
     let () =
