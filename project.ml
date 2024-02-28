@@ -73,7 +73,7 @@ let init name =
       "# module ; relies on modules ; uses external libs\n%s ; _ ; _"
       name
   in
-  let file_contents = "let () = print_endline \"eat ass\\n\"" in
+  let file_contents = "let () = print_endline \"Hello, World!\"" in
   let proj_channel = Out_channel.create (name ^ filename) in
   Out_channel.output_string proj_channel cbt_contents;
   Out_channel.close proj_channel;
