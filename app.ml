@@ -36,7 +36,7 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already
   let was_any_submodule_compiled =
     List.fold ~init:false
               ~f:(fun acc subm ->
-                acc || match List.find ~f:(fun comp -> String.equal comp subm.name) submodules_compiled with
+                acc || match List.find ~f:(String.equal subm.name) submodules_compiled with
                 | Some _ -> true
                 | None -> false
               ) a.modules
