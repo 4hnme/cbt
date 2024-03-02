@@ -12,6 +12,14 @@ let set_name name a = { a with name }
 let add_lib l a = { a with libs = l :: a.libs }
 let add_module m a = { a with modules = m :: a.modules }
 
+let compare app1 app2 =
+	match
+		List.find ~f:(fun m -> String.equal app1.name m.name) app2.modules,
+		List.find ~f:(fun m -> String.equal app2.name m.name) app1.modules
+	with
+	| Some _, Some _ | None, None -> 0
+	| Some _, None -> -1
+	| None, Some _ -> 1
 let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already_compiled = []) =
   let ml_modification = (Unix.stat (a.name ^ ".ml")).st_mtime in
   let cmx_modification =

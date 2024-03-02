@@ -24,11 +24,12 @@ let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
       ) proj.main.libs in
       Some (prefix :: packages)
   in
+  let modules_sorted = List.sort ~compare:App.compare proj.main.modules in
   let modules =
     List.fold
       ~init:""
       ~f:(fun a m -> a ^ m.name ^ ".cmx" ^ " ")
-      proj.main.modules
+      modules_sorted
   in
   let compiled_modules = App.compile ~force ~show_cmd proj.main ~already_compiled:[] in
   let output_file_exists = match Unix.access proj.name [Unix.F_OK] with
