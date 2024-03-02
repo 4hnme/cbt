@@ -23,6 +23,13 @@ let () =
        |init|\n\
        |~~~~|\n\
        creates a new project directory. template is not custimizible yet\n"
+  | [| _; "restore"; "help" |] ->
+    printf
+      "|~~~~~~~|\n\
+       |restore|\n\
+       |~~~~~~~|\n\
+       creates a proj.cbt file in the current directory\n\
+       might break stuff, to be used with caution\n"
   | [| _; "install"; "help" |] ->
     printf
       "|~~~~~~~|\n\
@@ -53,6 +60,7 @@ let () =
        simply rebuilds the current project\n\
        use \"build show\" to show generated build commands during the compilation\n"
   | [| _; "init"; name |] -> Project.init name
+  | [| _; "restore" |] -> Project.restore ()
   | [| _; "soft-build" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:false proj
