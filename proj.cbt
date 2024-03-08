@@ -1,4 +1,4 @@
-cbt     ; project, app, cmd ; stdio, base, unix
-project ; app, cmd          ; stdio, base, unix
-app     ; cmd               ; stdio, base, unix
-cmd     ; _                 ; base
+cbt ; app, cmd, project ; base, re, stdio, unix
+app ; cmd ; base, stdio, unix
+cmd ; _ ; base
+project ; app, cmd ; base, re, stdio, unix
