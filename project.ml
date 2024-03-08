@@ -87,8 +87,14 @@ let restore () =
     | _ -> String.concat ~sep:", " lst
   in
   let cwd = Unix.getcwd () in
-  let ml_files = Stdlib.Sys.readdir cwd
-  |> Array.filter ~f:(fun file ->
+  let rec readdir acc handle =
+    match Unix.readdir handle with
+    | filename -> readdir (filename :: acc) handle
+    | exception End_of_file -> acc
+  in
+  let dir_handle = Unix.opendir cwd in
+  let ml_files = readdir [] dir_handle
+  |> List.filter ~f:(fun file ->
       match String.length file with
       | x when x > 3 -> (
         match String.substr_index ~pos:(x - 3) ~pattern:".ml" file with
@@ -96,7 +102,6 @@ let restore () =
         | None -> false )
       | _ -> false
     )
-  |> List.of_array
   in
   match ml_files with
   | [] -> raise @@ Invalid_argument "no .ml files in current directory"
