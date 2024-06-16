@@ -35,15 +35,14 @@ let () =
       "|~~~~~~~|\n\
        |install|\n\
        |~~~~~~~|\n\
-       copies executable file into /usr/bin directory. path is customizible yet\n"
+       copies executable file into /usr/bin directory. path is not customizible yet\n"
   | [| _; "drop-merlin"; "help" |] ->
     printf
       "|~~~~~~~~~~~|\n\
        |drop-merlin|\n\
        |~~~~~~~~~~~|\n\
-       create a .merlin file in the folder for better lsp integration. it \
-       won't hurt to do \"touch dune-workspace\" either because \
-       https://github.com/ocaml/ocaml-lsp/pull/1173\n"
+       create a .merlin file in the folder for better lsp integration.\n\
+       in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command"
   | [| _; "soft-build"; "help" |] ->
     printf
       "|~~~~~~~~~~|\n\
