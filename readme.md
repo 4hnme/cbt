@@ -23,7 +23,6 @@ the first line declares the main module that will be compiled into an executable
 why not use [dune](https://github.com/ocaml/dune)? because i felt like it was an overkill for majority of projects i'm making
 
 ### LSP integration
-at the moment [ocaml-lsp](https://github.com/ocaml/ocaml-lsp) doesn't fully support not dune-based project, although it kinda does (see [pull request](https://github.com/ocaml/ocaml-lsp/pull/1173)). in order for LSP to function properly, in project's root you will need to create:
-- a `.merlin` file by following [the guide](https://github.com/ocaml/merlin/wiki/Project-configuration) or by using `cbt drop-merlin` command which will generate it for you automatically
-- an empty `dune-workspace` file
-> note: this will become obsolete once the aforementioned pull request is added into ocaml-lsp's release version
+in order for [ocaml-lsp](https://github.com/ocaml/ocaml-lsp) to function properly without [dune](https://github.com/ocaml/dune) you will need to:
+- create `.merlin` file by following [the guide](https://github.com/ocaml/merlin/wiki/Project-configuration) or by using `cbt drop-merlin` command which will generate it for you automatically
+- pass `--fallback-read-dot-merlin` flag to [ocaml-lsp](https://github.com/ocaml/ocaml-lsp)
