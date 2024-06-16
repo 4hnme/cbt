@@ -77,8 +77,12 @@ let () =
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:false proj;
     let install_path = match Sys.getenv "CBT_INSTALL_PATH" with
-    | Some p -> p
-    | None -> "/usr/bin"
+    | Some p -> (
+      match String.chop_suffix ~suffix:"/" p with
+      | Some _ -> p
+      | None -> p ^ "/"
+    )
+    | None -> "/usr/bin/"
     in
     let c =
       Unix.open_process_in
@@ -87,7 +91,7 @@ let () =
     let () = match Unix.close_process_in c with
     | Unix.WEXITED 0 ->
       let proj = Project.from_file proj_file in
-      printf "installed %s in /usr/bin/%s\n" proj.name proj.name
+      printf "installed %s in %s\n" proj.name (install_path ^ proj.name)
     | Unix.WEXITED _ ->
       let proj = Project.from_file proj_file in
       printf "failed to install %s...\n" proj.name
