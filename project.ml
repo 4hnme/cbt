@@ -167,7 +167,8 @@ let restore () =
       [name; prepare_deps_list subs; prepare_deps_list libs]
     ) submodules_data in
   let proj_data = String.concat ~sep:"\n" (header :: submodules) in
-  Out_channel.write_all "proj.cbt" ~data:proj_data
+  Out_channel.write_all "proj.cbt" ~data:proj_data;
+  Unix.mkdir "./_build" 0o777
 ;;
 
 let init name =
