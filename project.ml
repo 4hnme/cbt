@@ -9,7 +9,7 @@ type t =
 let create main name = { main; name }
 let filename = "/proj.cbt"
 
-let[@warning "-16"] compile proj ?(force = false) ?(show_cmd = false) =
+let compile ?(force = false) ?(show_cmd = false) proj =
   let output_file = proj.name ^ ".exe" in
   let output = Some (Cmd.Fdouble ("-o", output_file)) in
   let packages =

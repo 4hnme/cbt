@@ -21,7 +21,7 @@ let compare app1 app2 =
   | Some _, None -> -1
   | None, Some _ -> 1
 
-let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already_compiled = []) =
+let rec compile ?(force = false) ?(show_cmd = false) ?(already_compiled = []) a =
   let ml_modification = (Unix.stat (a.name ^ ".ml")).st_mtime in
   let cmx_modification =
     match Unix.stat ("_build/" ^ a.name ^ ".cmx") with
@@ -31,7 +31,7 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already
   let is_source_file_updated = Float.is_positive (ml_modification -. cmx_modification) in
   let submodules_compiled =
     List.fold ~init:already_compiled
-              ~f:(fun acc sub -> compile ~force ~show_cmd ~already_compiled:acc sub)
+              ~f:(fun acc sub -> compile sub ~force ~show_cmd ~already_compiled:acc)
               a.modules
   in
   let was_any_submodule_compiled =
@@ -46,8 +46,8 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already
   | Some _ -> true
   | None -> false
   in
-  match ((not is_already_compiled) && (is_source_file_updated || was_any_submodule_compiled)) || force with
-  | true ->
+  match (is_already_compiled), (is_source_file_updated || was_any_submodule_compiled || force) with
+  | false, true ->
     let packages =
       match a.libs with
       | [] -> None
@@ -79,9 +79,11 @@ let[@warning "-16"] rec compile a ?(force = false) ?(show_cmd = false) ?(already
         1, submodules_compiled
     in
     compiled_modules
-  | false ->
+  | false, false ->
     printf "no updates in %s, skip\n" a.name;
     Out_channel.flush stdout;
+    submodules_compiled
+  | true, _ ->
     submodules_compiled
 ;;
 
