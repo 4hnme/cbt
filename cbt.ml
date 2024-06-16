@@ -46,31 +46,31 @@ let () =
        in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command\n"
   | [| _; "soft-build"; "help" |] ->
     printf
-      "|~~~~~~~~~~|\n\
-       |soft-build|\n\
-       |~~~~~~~~~~|\n\
-       tries to compile project \"softly\". usually breaks, hopefully now it works \
-       properly\n\
-       use \"soft-build show\" to show generated build commands during the compilation\n"
-  | [| _; "build"; "help" |] ->
-    printf
       "|~~~~~|\n\
        |build|\n\
        |~~~~~|\n\
-       simply rebuilds the current project\n\
+       tries to compile project \"softly\". usually breaks, hopefully now it works \
+       properly\n\
        use \"build show\" to show generated build commands during the compilation\n"
+  | [| _; "build"; "help" |] ->
+    printf
+      "|~~~~~~~~~~~|\n\
+       |force-build|\n\
+       |~~~~~~~~~~~|\n\
+       simply rebuilds the current project\n\
+       use \"force-build show\" to show generated build commands during the compilation\n"
   | [| _; "init"; name |] -> Project.init name
   | [| _; "restore" |] -> Project.restore ()
-  | [| _; "soft-build" |] ->
-    let proj = Project.from_file proj_file in
-    Project.compile ~force:false ~show_cmd:false proj
-  | [| _; "soft-build"; "show" |] ->
-    let proj = Project.from_file proj_file in
-    Project.compile ~force:false ~show_cmd:true proj
   | [| _; "build" |] ->
     let proj = Project.from_file proj_file in
-    Project.compile ~force:true ~show_cmd:false proj
+    Project.compile ~force:false ~show_cmd:false proj
   | [| _; "build"; "show" |] ->
+    let proj = Project.from_file proj_file in
+    Project.compile ~force:false ~show_cmd:true proj
+  | [| _; "force-build" |] ->
+    let proj = Project.from_file proj_file in
+    Project.compile ~force:true ~show_cmd:false proj
+  | [| _; "force-build"; "show" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:true proj
   | [| _; "install" |] ->
