@@ -1,6 +1,8 @@
 open Base
 open Stdio
 
+exception CompilationError
+
 type t =
   { name : string
   ; modules : t list
@@ -62,26 +64,22 @@ let rec compile ?(force = false) ?(show_cmd = false) ?(already_compiled = []) a 
       |> Cmd.add_flag output
       |> Cmd.to_string
     in
-    printf "compiling %s.ml...\n" a.name;
-    if (show_cmd) then printf "\tcompile command: %s\n" cmd;
-    Out_channel.flush stdout;
+    Printer.module_compiling ~show_cmd a.name cmd;
     let process = Unix.open_process_in cmd in
     let exit_code, compiled_modules =
       match Unix.close_process_in process with
-      | Unix.WEXITED 1 ->
-        printf "couldn't compile %s\n" a.name;
-        Out_channel.flush stdout;
-        1, submodules_compiled
+      | Unix.WEXITED 2 ->
+        Printer.error ("couldn't compile " ^ a.name);
+        Stdlib.exit 1
       | Unix.WEXITED x ->
         x, a.name :: submodules_compiled
       | _ ->
-        printf "something went wrong...";
-        1, submodules_compiled
+        Printer.error "something went wrong...";
+        Stdlib.exit 1
     in
     compiled_modules
   | false, false ->
-    printf "no updates in %s, skip\n" a.name;
-    Out_channel.flush stdout;
+    Printer.module_skip a.name;
     submodules_compiled
   | true, _ ->
     submodules_compiled

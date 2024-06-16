@@ -9,7 +9,20 @@ type t =
 let create main name = { main; name }
 let filename = "/proj.cbt"
 
+let set_printer_longest proj =
+  let longest = List.fold
+    ~init:(!Printer.longest_module)
+    ~f:(fun acc app ->
+      let len = String.length app.name in
+      match Int.compare acc len with
+      | -1 -> len
+      | _ -> acc
+    )
+    proj.main.modules
+  in Printer.longest_module := longest
+
 let compile ?(force = false) ?(show_cmd = false) proj =
+  set_printer_longest proj;
   let output_file = proj.name ^ ".exe" in
   let output = Some (Cmd.Fdouble ("-o", output_file)) in
   let packages =
@@ -37,10 +50,11 @@ let compile ?(force = false) ?(show_cmd = false) proj =
   | exception Unix.Unix_error (Unix.ENOENT, _, _) -> false
   in
   match List.length compiled_modules, output_file_exists with
-  | 0, true -> printf "had to do nothing\n"
+  | 0, true ->
+    Printer.ok "project is already up to date";
   | _, _ ->
     if (not output_file_exists) then
-      printf "everything is already up to date but the executable file is missing\n";
+      Printer.info "everything is already up to date but the executable file is missing";
     let cmd =
       Cmd.empty
       |> Cmd.add_flags packages
@@ -48,15 +62,16 @@ let compile ?(force = false) ?(show_cmd = false) proj =
       |> Cmd.add_flag (Some (Cmd.Fsingle (modules ^ proj.main.name ^ ".cmx")))
       |> Cmd.to_string
     in
-    printf "compiling project...\n";
-    if (show_cmd) then printf "\tcompile command: %s\n" cmd;
+    Printer.project_compiling ~show_cmd proj.name cmd;
     let c = Unix.open_process_in cmd in
-    (match Unix.close_process_in c with
+    match Unix.close_process_in c with
      | Unix.WEXITED 0 -> Unix.rename (proj.name ^ ".exe") proj.name
      | Unix.WEXITED code ->
-     printf "couldn't link project, subprocess returned %d \
-             (probably missing some dependencies?)\n" code
-     | _ | (exception _) -> printf "something went wrong during compilation...\n")
+     Printer.error @@
+       "couldn't link project, subprocess returned " ^
+       Int.to_string code ^
+       " (probably missing some dependencies?)"
+     | _ | (exception _) -> Printer.error "something went wrong during compilation..."
 ;;
 
 let from_file path =
@@ -172,7 +187,8 @@ let restore () =
 ;;
 
 let init name =
-  printf "creating project at %s/%s\n" (Unix.getcwd ()) name;
+  let info = "creating project at " ^ (Unix.getcwd ()) ^ name in
+  Printer.info info;
   let perms = 0o777 in
   Unix.mkdir name perms;
   Unix.mkdir (name ^ "/_build") perms;
@@ -190,7 +206,7 @@ let init name =
 ;;
 
 let drop_merlin proj =
-  printf "creating .merlin file...\n";
+  Printer.info "creating .merlin file...";
   let packages = String.concat ~sep:" " @@ App.get_packages proj.main in
   let contents = "S .\nB _build\n\nPKG " ^ packages in
   Out_channel.write_all ".merlin" ~data:contents
