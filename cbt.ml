@@ -35,14 +35,15 @@ let () =
       "|~~~~~~~|\n\
        |install|\n\
        |~~~~~~~|\n\
-       copies executable file into /usr/bin directory. path is not customizible yet\n"
+       copies executable file into /usr/bin directory by default.\n\
+       you can specify installation path by setting \"CBT_INSTALL_PATH\" environment variable\n"
   | [| _; "drop-merlin"; "help" |] ->
     printf
       "|~~~~~~~~~~~|\n\
        |drop-merlin|\n\
        |~~~~~~~~~~~|\n\
        create a .merlin file in the folder for better lsp integration.\n\
-       in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command"
+       in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command\n"
   | [| _; "soft-build"; "help" |] ->
     printf
       "|~~~~~~~~~~|\n\
@@ -75,9 +76,13 @@ let () =
   | [| _; "install" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:false proj;
+    let install_path = match Sys.getenv "CBT_INSTALL_PATH" with
+    | Some p -> p
+    | None -> "/usr/bin"
+    in
     let c =
       Unix.open_process_in
-        ("sudo cp ./" ^ proj.main.name ^ " /usr/bin/" ^ proj.main.name)
+        ("sudo cp ./" ^ proj.main.name ^ "  " ^ install_path ^ proj.main.name)
     in
     let () = match Unix.close_process_in c with
     | Unix.WEXITED 0 ->
