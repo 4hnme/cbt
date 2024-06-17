@@ -6,14 +6,17 @@ module type PRINTER = sig
   val module_compiling : ?show_cmd:bool -> string -> string -> unit
   val module_skip : string -> unit
   val project_compiling : ?show_cmd:bool -> string -> string -> unit
+  val help : string -> string list -> unit
   val error : string -> unit
   val warning : string -> unit
   val ok : string -> unit
   val info : string -> unit
+  val usage : string -> unit
 end
 
 module Printer_fancy : PRINTER = struct
   let reset = "\x1b[0m"
+  let bold = "\x1b[1m"
   let black_on_red = "\x1b[;30;41m"
   let black_on_green = "\x1b[;30;42m"
   let black_on_yellow = "\x1b[;30;43m"
@@ -80,6 +83,12 @@ module Printer_fancy : PRINTER = struct
     Out_channel.flush stdout
   ;;
 
+  let help name lines =
+    printf "%s%s%s\n" black_on_white name reset;
+    List.iter ~f:(printf "%s\n") lines;
+    Out_channel.flush stdout
+  ;;
+
   let error text =
     let padded_name = pad_name "error" in
     printf "%s%s%s %s\n" black_on_red padded_name reset text;
@@ -103,6 +112,19 @@ module Printer_fancy : PRINTER = struct
     printf "%s%s%s %s\n" black_on_white padded_name reset text;
     Out_channel.flush stdout
   ;;
+
+  let usage name =
+    printf
+    "%sUsage%s %s [option] ?help\n\
+     List of available options:\n\
+     \t%sinit%s <project name>\n\
+     \t%sbuild\n\
+     \tforce-build\n\
+     \tinstall\n\
+     \tdrop-merlin\n
+     \trestore%s\n"
+   black_on_white reset name bold reset bold reset
+   ;;
 end
 
 module Printer_simple = struct
@@ -148,6 +170,12 @@ module Printer_simple = struct
     Out_channel.flush stdout
   ;;
 
+  let help name lines =
+    printf "%s\n" name;
+    List.iter ~f:(printf "%s\n") lines;
+    Out_channel.flush stdout
+  ;;
+
   let error text =
     printf "error: %s\n" text;
     Out_channel.flush stdout
@@ -167,6 +195,19 @@ module Printer_simple = struct
     printf "info: %s\n" text;
     Out_channel.flush stdout
   ;;
+
+  let usage name =
+    printf
+    "Usage: %s [option] ?help\n\
+     List of available options:\n\
+     \tinit <project name>\n\
+     \tbuild\n\
+     \tforce-build\n\
+     \tinstall\n\
+     \tdrop-merlin\n\
+     \trestore\n"
+   name
+   ;;
 end
 
 include Printer_fancy

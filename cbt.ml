@@ -1,64 +1,44 @@
 open Base
 open Stdio
 
-let print_usage name =
-  printf
-    "Usage: %s [option] ?help\n\
-     List of available options:\n\
-     \tinit <project name>\n\
-     \tsoft-build\n\
-     \tbuild\n\
-     \tinstall\n\
-     \tdrop-merlin"
-    name
-;;
-
 let proj_file = "./proj.cbt"
 
 let () =
   match Sys.get_argv () with
   | [| _; "init"; "help" |] ->
-    printf
-      "|~~~~|\n\
-       |init|\n\
-       |~~~~|\n\
-       creates a new project directory. template is not custimizible yet\n"
+    Printer.help
+      "init"
+      [ "creates a new project directory. template is not custimizible yet" ]
   | [| _; "restore"; "help" |] ->
-    printf
-      "|~~~~~~~|\n\
-       |restore|\n\
-       |~~~~~~~|\n\
-       creates a proj.cbt file in the current directory\n\
-       might break stuff, to be used with caution\n"
+    Printer.help
+      "restore"
+      [ "creates a proj.cbt file in current directory."
+      ; "might break stuff, to be used with caution"
+      ]
   | [| _; "install"; "help" |] ->
-    printf
-      "|~~~~~~~|\n\
-       |install|\n\
-       |~~~~~~~|\n\
-       copies executable file into /usr/bin directory by default.\n\
-       you can specify installation path by setting \"CBT_INSTALL_PATH\" environment variable\n"
+    Printer.help
+      "install"
+      [ "rebuild project and copies executable file into /usr/bin directory by default."
+      ; "you can specify installation path by setting \"CBT_INSTALL_PATH\" environment variable\n"
+      ]
   | [| _; "drop-merlin"; "help" |] ->
-    printf
-      "|~~~~~~~~~~~|\n\
-       |drop-merlin|\n\
-       |~~~~~~~~~~~|\n\
-       create a .merlin file in the folder for better lsp integration.\n\
-       in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command\n"
-  | [| _; "soft-build"; "help" |] ->
-    printf
-      "|~~~~~|\n\
-       |build|\n\
-       |~~~~~|\n\
-       tries to compile project \"softly\". usually breaks, hopefully now it works \
-       properly\n\
-       use \"build show\" to show generated build commands during the compilation\n"
+    Printer.help
+      "drop-merlin"
+       [ "create a .merlin file in project directory for better lsp integration."
+       ; "in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command"
+       ]
   | [| _; "build"; "help" |] ->
-    printf
-      "|~~~~~~~~~~~|\n\
-       |force-build|\n\
-       |~~~~~~~~~~~|\n\
-       simply rebuilds the current project\n\
-       use \"force-build show\" to show generated build commands during the compilation\n"
+    Printer.help
+       "build"
+       [ "tries to compile project \"softly\". usually breaks, hopefully now it works properly."
+       ; "use \"build show\" to show generated build commands during compilation"
+       ]
+  | [| _; "force-build"; "help" |] ->
+    Printer.help
+       "force-build"
+       [ "simply rebuilds whole project."
+       ; "use \"force-build show\" to show generated build commands during compilation"
+       ]
   | [| _; "init"; name |] -> Project.init name
   | [| _; "restore" |] -> Project.restore ()
   | [| _; "build" |] ->
@@ -76,29 +56,34 @@ let () =
   | [| _; "install" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:false proj;
-    let install_path = match Sys.getenv "CBT_INSTALL_PATH" with
-    | Some p -> (
-      match String.chop_suffix ~suffix:"/" p with
-      | Some _ -> p
-      | None -> p ^ "/"
-    )
-    | None -> "/usr/bin/"
+    let install_path =
+      match Sys.getenv "CBT_INSTALL_PATH" with
+      | Some p ->
+        (match String.chop_suffix ~suffix:"/" p with
+         | Some _ -> p
+         | None -> p ^ "/")
+      | None -> "/usr/bin/"
     in
     let c =
       Unix.open_process_in
         ("sudo cp ./" ^ proj.main.name ^ "  " ^ install_path ^ proj.main.name)
     in
-    let () = match Unix.close_process_in c with
-    | Unix.WEXITED 0 ->
-      let proj = Project.from_file proj_file in
-      printf "installed %s in %s\n" proj.name (install_path ^ proj.name)
-    | Unix.WEXITED _ ->
-      let proj = Project.from_file proj_file in
-      printf "failed to install %s...\n" proj.name
-    | _ -> printf "something went horribly wrong..."
-    in ()
+    let () =
+      match Unix.close_process_in c with
+      | Unix.WEXITED 0 ->
+        let proj = Project.from_file proj_file in
+        Printer.ok ("installed " ^ proj.name ^ " in " ^ (install_path ^ proj.name))
+      | Unix.WEXITED _ ->
+        let proj = Project.from_file proj_file in
+        Printer.error ("failed to install" ^ proj.name)
+      | _ -> Printer.error "something went horribly wrong"
+    in
+    ()
   | [| _; "drop-merlin" |] ->
     let proj = Project.from_file proj_file in
     Project.drop_merlin proj
-  | _ -> print_usage "cbt"
+  | [|name ; _ |] ->
+    Printer.usage name;
+    Stdlib.exit 1
+  | _ -> Printer.error "something went horribly wrong"
 ;;
