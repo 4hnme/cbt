@@ -4,58 +4,58 @@ open Stdio
 let proj_file = "./proj.cbt"
 
 let () =
-  match Sys.get_argv () with
-  | [| _; "init"; "help" |] ->
+  match List.of_array (Sys.get_argv ()) with
+  | _ :: "init" :: "help" :: [] ->
     Printer.help
       "init"
       [ "creates a new project directory. template is not custimizible yet" ]
-  | [| _; "restore"; "help" |] ->
+  | _ :: "restore" :: "help" :: [] ->
     Printer.help
       "restore"
       [ "creates a proj.cbt file in current directory."
       ; "might break stuff, to be used with caution"
       ; "use \"restore to-stdout\" to print instead of writing into a file"
       ]
-  | [| _; "install"; "help" |] ->
+  | _ :: "install" :: "help" :: [] ->
     Printer.help
       "install"
       [ "rebuild project and copies executable file into /usr/bin directory by default."
       ; "you can specify installation path by setting \"CBT_INSTALL_PATH\" environment variable\n"
       ]
-  | [| _; "drop-merlin"; "help" |] ->
+  | _ :: "drop-merlin" :: "help" :: [] ->
     Printer.help
       "drop-merlin"
        [ "create a .merlin file in project directory for better lsp integration."
        ; "in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command"
        ]
-  | [| _; "build"; "help" |] ->
+  | _ :: "build" :: "help" :: [] ->
     Printer.help
        "build"
        [ "tries to compile project \"softly\". usually breaks, hopefully now it works properly."
        ; "use \"build show\" to show generated build commands during compilation"
        ]
-  | [| _; "force-build"; "help" |] ->
+  | _ :: "force-build" :: "help" :: [] ->
     Printer.help
        "force-build"
        [ "simply rebuilds whole project."
        ; "use \"force-build show\" to show generated build commands during compilation"
        ]
-  | [| _; "init"; name |] -> Project.init name
-  | [| _; "restore" |] -> Project.restore ()
-  | [| _; "restore"; "to-stdout" |] -> Project.restore ~channel:stdout ()
-  | [| _; "build" |] ->
+  | _ :: "init" :: name :: [] -> Project.init name
+  | _ :: "restore" :: [] -> Project.restore ()
+  | _ :: "restore" :: "to-stdout" :: [] -> Project.restore ~channel:stdout ()
+  | _ :: "build" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:false proj
-  | [| _; "build"; "show" |] ->
+  | _ :: "build" :: "show" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:true proj
-  | [| _; "force-build" |] ->
+  | _ :: "force-build" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:false proj
-  | [| _; "force-build"; "show" |] ->
+  | _ :: "force-build" :: "show" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:true proj
-  | [| _; "install" |] ->
+  | _ :: "install" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:true ~show_cmd:false proj;
     let install_path =
@@ -81,11 +81,13 @@ let () =
       | _ -> Printer.error "something went horribly wrong"
     in
     ()
-  | [| _; "drop-merlin" |] ->
+  | _ :: "drop-merlin" :: _ ->
     let proj = Project.from_file proj_file in
     Project.drop_merlin proj
-  | [|name ; _ |] ->
+  | name :: _ ->
     Printer.usage name;
     Stdlib.exit 1
-  | _ -> Printer.error "something went horribly wrong"
+  | _ ->
+    Printer.error "something went horribly wrong";
+    Stdlib.exit 1
 ;;
