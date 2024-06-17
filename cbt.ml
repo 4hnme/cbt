@@ -14,6 +14,7 @@ let () =
       "restore"
       [ "creates a proj.cbt file in current directory."
       ; "might break stuff, to be used with caution"
+      ; "use \"restore to-stdout\" to print instead of writing into a file"
       ]
   | [| _; "install"; "help" |] ->
     Printer.help
@@ -41,6 +42,7 @@ let () =
        ]
   | [| _; "init"; name |] -> Project.init name
   | [| _; "restore" |] -> Project.restore ()
+  | [| _; "restore"; "to-stdout" |] -> Project.restore ~channel:stdout ()
   | [| _; "build" |] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:false proj

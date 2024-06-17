@@ -87,7 +87,7 @@ let is_valid_lib name =
   | _ -> true
 ;;
 
-let restore () =
+let restore ?(channel) () =
   let main_regex = Re.(compile @@ seq [bol; str "let () ="]) in
   let namespace_regex =
     Re.(compile @@ alt [ seq [str "open "; upper; rep lower] ; seq [upper; rep lower; char '.'] ]) in
@@ -182,8 +182,14 @@ let restore () =
       [name; prepare_deps_list subs; prepare_deps_list libs]
     ) submodules_data in
   let proj_data = String.concat ~sep:"\n" (header :: submodules) in
-  Out_channel.write_all "proj.cbt" ~data:proj_data;
-  Unix.mkdir "./_build" 0o777
+  match channel with
+  | Some c ->
+    Printer.info "printing generated \"proj.cbt\" file";
+    Out_channel.output_line c proj_data;
+    Out_channel.flush c
+  | None ->
+    Out_channel.write_all "proj.cbt" ~data:proj_data;
+    Unix.mkdir "./_build" 0o777
 ;;
 
 let init name =
