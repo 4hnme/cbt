@@ -22,15 +22,35 @@ let compare app1 app2 =
   | Some _, Some _ | None, None -> 0
   | Some _, None -> -1
   | None, Some _ -> 1
+;;
 
-let rec compile ?(force = false) ?(show_cmd = false) ?(already_compiled = []) a =
-  let ml_modification = (Unix.stat (a.name ^ ".ml")).st_mtime in
+let source_updated app already_compiled =
+  let ml_modification = (Unix.stat (app.name ^ ".ml")).st_mtime in
   let cmx_modification =
-    match Unix.stat ("_build/" ^ a.name ^ ".cmx") with
+    match Unix.stat ("_build/" ^ app.name ^ ".cmx") with
     | s -> s.st_mtime
     | exception _ -> 0.0
   in
-  let is_source_file_updated = Float.is_positive (ml_modification -. cmx_modification) in
+  Float.is_positive (ml_modification -. cmx_modification)
+;;
+
+let build_cmd app =
+    let packages =
+      match app.libs with
+      | [] -> None
+      | _ -> Some (List.map ~f:(fun l -> Cmd.Fdouble ("-package", l)) app.libs)
+    in
+    let into_module = Some (Cmd.Fdouble ("-c", app.name ^ ".ml")) in
+    let output = Some (Cmd.Fdouble ("-o", "_build/" ^ app.name ^ ".cmx")) in
+    Cmd.empty
+    |> Cmd.add_flags packages
+    |> Cmd.add_flag into_module
+    |> Cmd.add_flag output
+    |> Cmd.to_string
+;;
+
+let rec compile ?(force = false) ?(show_cmd = false) ?(already_compiled = []) a =
+  let is_source_file_updated = source_updated a already_compiled in
   let submodules_compiled =
     List.fold ~init:already_compiled
               ~f:(fun acc sub -> compile sub ~force ~show_cmd ~already_compiled:acc)
@@ -44,44 +64,32 @@ let rec compile ?(force = false) ?(show_cmd = false) ?(already_compiled = []) a 
                 | None -> false
               ) a.modules
   in
-  let is_already_compiled = match List.find ~f:(fun name -> String.equal name a.name) already_compiled with
-  | Some _ -> true
-  | None -> false
+  let is_already_compiled =
+    match List.find ~f:(fun name -> String.equal name a.name) already_compiled with
+    | Some _ -> true
+    | None -> false
   in
   match (is_already_compiled), (is_source_file_updated || was_any_submodule_compiled || force) with
+  | true, _ ->
+    submodules_compiled
   | false, true ->
-    let packages =
-      match a.libs with
-      | [] -> None
-      | _ -> Some (List.map ~f:(fun l -> Cmd.Fdouble ("-package", l)) a.libs)
-    in
-    let into_module = Some (Cmd.Fdouble ("-c", a.name ^ ".ml")) in
-    let output = Some (Cmd.Fdouble ("-o", "_build/" ^ a.name ^ ".cmx")) in
-    let cmd =
-      Cmd.empty
-      |> Cmd.add_flags packages
-      |> Cmd.add_flag into_module
-      |> Cmd.add_flag output
-      |> Cmd.to_string
-    in
+    let cmd = build_cmd a in
     Printer.module_compiling ~show_cmd a.name cmd;
     let process = Unix.open_process_in cmd in
-    let exit_code, compiled_modules =
+    let new_submodules_compiled =
       match Unix.close_process_in process with
       | Unix.WEXITED 2 ->
         Printer.error ("couldn't compile " ^ a.name);
         Stdlib.exit 1
       | Unix.WEXITED x ->
-        x, a.name :: submodules_compiled
+        a.name :: submodules_compiled
       | _ ->
         Printer.error "something went wrong...";
         Stdlib.exit 1
     in
-    compiled_modules
+    new_submodules_compiled
   | false, false ->
     Printer.module_skip a.name;
-    submodules_compiled
-  | true, _ ->
     submodules_compiled
 ;;
 
