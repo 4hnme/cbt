@@ -2,6 +2,7 @@ open Base
 open Stdio
 
 exception CompilationError
+exception ParsingError
 
 type t =
   { name : string
@@ -108,26 +109,43 @@ let rec get_packages app =
   filter [] raw
 ;;
 
-let from_file path =
-  let parse_line l =
-    let[@warning "-8"] [ name; modules_raw; libs_raw ] =
-      String.split ~on:';' l
-    in
-    let libs =
-      String.split ~on:',' libs_raw
-      |> List.map ~f:remove_spaces
-      |> List.filter ~f:(fun str -> not (String.equal str "_"))
-    in
-    let modules =
-      String.split ~on:',' modules_raw |> List.map ~f:remove_spaces
-    in
-    { name = remove_spaces name; modules = []; libs }, modules
+let from_line line =
+  let rec aux acc chars buffer =
+    match chars with
+    | ' ' :: tl -> aux acc tl buffer
+    | ',' :: tl -> (
+      match acc with
+      | hda :: tla ->
+        let word = buffer |> List.rev |> String.of_list in
+        aux ((word :: hda) :: tla) tl []
+      | [] -> raise ParsingError
+    )
+    | ';' :: tl -> (
+      let word = buffer |> List.rev |> String.of_list in
+      match acc with
+      | [] -> aux [[]; [word]] tl []
+      | hda :: tla -> aux ([] :: (word :: hda) :: tla) tl []
+    )
+    | c :: tl -> aux acc tl (c :: buffer)
+    | [] ->
+      match buffer, acc with
+      | [], _ -> List.rev acc
+      | _, hda :: tla ->
+        let word = buffer |> List.rev |> String.of_list in
+        List.rev ((word :: hda) :: tla)
+    | _ -> raise ParsingError
   in
+  match aux [] (String.to_list line) [] with
+  | [name] :: modules :: [libs] -> { name; modules = []; libs}, modules
+  | _ -> raise ParsingError
+;;
+
+let from_file path =
   let lines =
     In_channel.read_lines path
     |> List.filter ~f:(fun str -> not (String.is_prefix ~prefix:"#" str))
   in
-  let app_n_ms = List.map ~f:parse_line lines in
+  let app_n_ms = List.map ~f:from_line lines in
   let rec populate (app, ms) =
     match ms with
     | [] | [ "_" ] -> app
