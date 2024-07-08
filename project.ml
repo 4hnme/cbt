@@ -73,14 +73,16 @@ let compile ?(force = false) ?(show_cmd = false) proj =
     Printer.project_compiling ~show_cmd proj.name cmd;
     let c = Unix.open_process_in cmd in
     match Unix.close_process_in c with
-     | Unix.WEXITED 0 -> Unix.rename (proj.name ^ ".exe") proj.name
-     | Unix.WEXITED code ->
-       Printer.error
-       @@ "couldn't link project, subprocess returned "
-       ^ Int.to_string code
-       ^ " (probably missing some dependencies?)"
-     | _ | (exception _) ->
-       Printer.error "something went wrong during compilation..."
+    | Unix.WEXITED 0 ->
+      Unix.rename (proj.name ^ ".exe") proj.name;
+      Printer.ok "done"
+    | Unix.WEXITED code ->
+      Printer.error
+      @@ "couldn't link project, subprocess returned "
+      ^ Int.to_string code
+      ^ " (probably missing some dependencies?)"
+    | _ | (exception _) ->
+      Printer.error "something went wrong during compilation..."
 ;;
 
 let from_file path =
