@@ -136,6 +136,7 @@ let from_line line =
     | _ -> raise ParsingError
   in
   match aux [] (String.to_list line) [] with
+  | [name] :: modules :: ["_"] :: [] -> { name; modules = []; libs = []}, modules
   | [name] :: modules :: [libs] -> { name; modules = []; libs}, modules
   | _ -> raise ParsingError
 ;;
