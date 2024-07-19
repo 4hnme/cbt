@@ -2,7 +2,7 @@ open Base
 open Stdio
 
 exception CompilationError
-exception ParsingError
+exception ParsingError of string
 
 type t =
   { name : string
@@ -118,7 +118,7 @@ let from_line line =
       | hda :: tla ->
         let word = buffer |> List.rev |> String.of_list in
         aux ((word :: hda) :: tla) tl []
-      | [] -> raise ParsingError
+      | [] -> raise (ParsingError line)
     )
     | ';' :: tl -> (
       let word = buffer |> List.rev |> String.of_list in
@@ -133,12 +133,12 @@ let from_line line =
       | _, hda :: tla ->
         let word = buffer |> List.rev |> String.of_list in
         List.rev ((word :: hda) :: tla)
-    | _ -> raise ParsingError
+    | _ -> raise (ParsingError line)
   in
   match aux [] (String.to_list line) [] with
   | [name] :: modules :: ["_"] :: [] -> { name; modules = []; libs = []}, modules
   | [name] :: modules :: [libs] -> { name; modules = []; libs}, modules
-  | _ -> raise ParsingError
+  | _ -> raise (ParsingError line)
 ;;
 
 let from_file path =
@@ -147,15 +147,15 @@ let from_file path =
     |> List.filter ~f:(fun str -> not (String.is_prefix ~prefix:"#" str))
   in
   let app_n_ms = List.map ~f:from_line lines in
-  let rec populate (app, ms) =
-    match ms with
+  let rec populate (app, submods) =
+    match submods with
     | [] | [ "_" ] -> app
     | hd :: tl ->
-      let m, sm =
+      let m, subm =
         List.find ~f:(fun (a, _) -> String.equal a.name hd) app_n_ms
         |> Option.value_exn
       in
-      populate ({ app with modules = populate (m, sm) :: app.modules }, tl)
+      populate ({ app with modules = populate (m, subm) :: app.modules }, tl)
   in
   List.map ~f:populate app_n_ms
 ;;
