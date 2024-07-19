@@ -54,7 +54,8 @@ let () =
     Project.compile ~force:false ~show_cmd:false proj
   | _ :: "test" :: [] ->
     let proj = Project.from_file proj_file in
-    Testing.test_project proj
+    Testing.test_project proj;
+    Unix.unlink Testing.temp_filename (* can raise something but i don't really care enough *)
   | _ :: "build" :: "show" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:true proj

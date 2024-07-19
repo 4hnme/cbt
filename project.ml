@@ -64,8 +64,8 @@ let compile ?(force = false) ?(show_cmd = false) proj =
   in
   match List.length compiled_modules, output_file_exists with
   | 0, true -> Printer.ok "project is already up to date"
-  | _, _ ->
-    if not output_file_exists
+  | len, _ ->
+    if (not output_file_exists && Int.(len = 0))
     then
       Printer.info
         "everything is already up to date but the executable file is missing";
@@ -234,13 +234,14 @@ let restore ?channel () =
 ;;
 
 let init name =
-  let info = "creating project at " ^ Unix.getcwd () ^ name in
+  let open Printf in
+  let info = sprintf "creating project at %s/%s" (Unix.getcwd ()) name in
   Printer.info info;
   let perms = 0o777 in
   Unix.mkdir name perms;
   Unix.mkdir (name ^ "/_build") perms;
   let cbt_contents =
-    Printf.sprintf
+    sprintf
       "# module ; relies on modules ; uses external libs\n%s ; _ ; _"
       name
   in
