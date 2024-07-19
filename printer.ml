@@ -120,6 +120,7 @@ module Printer_fancy : PRINTER = struct
      List of available options:\n\
      \t%sinit%s <project name>\n\
      \t%sbuild\n\
+     \t%stest\n\
      \tforce-build\n\
      \tinstall\n\
      \tdrop-merlin\n
@@ -202,6 +203,7 @@ module Printer_simple = struct
      List of available options:\n\
      \tinit <project name>\n\
      \tbuild\n\
+     \ttest\n\
      \tforce-build\n\
      \tinstall\n\
      \tdrop-merlin\n\
