@@ -34,6 +34,12 @@ let () =
        [ "tries to compile project \"softly\". usually breaks, hopefully now it works properly."
        ; "use \"build show\" to show generated build commands during compilation"
        ]
+  | _ :: "test" :: "help" :: [] ->
+    Printer.help
+       "test"
+       [ "run tests for your project."
+       ; "warning: very-very early development. run at your own risk"
+       ]
   | _ :: "force-build" :: "help" :: [] ->
     Printer.help
        "force-build"
@@ -46,6 +52,9 @@ let () =
   | _ :: "build" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:false proj
+  | _ :: "test" :: [] ->
+    let proj = Project.from_file proj_file in
+    Testing.test_project proj
   | _ :: "build" :: "show" :: [] ->
     let proj = Project.from_file proj_file in
     Project.compile ~force:false ~show_cmd:true proj
