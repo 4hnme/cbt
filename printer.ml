@@ -1,8 +1,11 @@
 open Base
 open Stdio
 
+let output = ref stdout
+let set_output chan = output := chan
+let longest_module = ref 7
+
 module type PRINTER = sig
-  val longest_module : int ref
   val module_compiling : ?show_cmd:bool -> string -> string -> unit
   val module_skip : string -> unit
   val project_compiling : ?show_cmd:bool -> string -> string -> unit
@@ -22,8 +25,6 @@ module Printer_fancy : PRINTER = struct
   let black_on_yellow = "\x1b[;30;43m"
   let black_on_blue = "\x1b[;30;44m"
   let black_on_white = "\x1b[;30;47m"
-
-  let longest_module = ref 7
 
   let already_displayed_skips = ref []
 
@@ -49,10 +50,10 @@ module Printer_fancy : PRINTER = struct
 
   let module_compiling ?(show_cmd = false) name cmd =
     let padded_name = pad_name name in
-    printf "%s%s%s compiling...\n" black_on_blue padded_name reset;
+    Out_channel.fprintf !output "%s%s%s compiling...\n" black_on_blue padded_name reset;
     match show_cmd with
     | true ->
-      printf "\t%s\n" cmd
+      Out_channel.fprintf !output "\t%s\n" cmd
     | false ->
       ()
     ;
@@ -66,17 +67,17 @@ module Printer_fancy : PRINTER = struct
     | false ->
       add_to_already_displayed name;
       let padded_name = pad_name name in
-      printf "%s%s%s is up to date, skip\n" black_on_blue padded_name reset
+      Out_channel.fprintf !output "%s%s%s is up to date, skip\n" black_on_blue padded_name reset
     ;
     Out_channel.flush stdout
   ;;
 
   let project_compiling ?(show_cmd = false) name cmd =
     let padded_name = pad_name name in
-    printf "%s%s%s compiling...\n" black_on_green padded_name reset;
+    Out_channel.fprintf !output "%s%s%s compiling...\n" black_on_green padded_name reset;
     match show_cmd with
     | true ->
-      printf "\t%s\n" cmd
+      Out_channel.fprintf !output "\t%s\n" cmd
     | false ->
       ()
     ;
@@ -84,37 +85,37 @@ module Printer_fancy : PRINTER = struct
   ;;
 
   let help name lines =
-    printf "%s%s%s\n" black_on_white name reset;
-    List.iter ~f:(printf "%s\n") lines;
+    Out_channel.fprintf !output "%s%s%s\n" black_on_white name reset;
+    List.iter ~f:(Out_channel.fprintf !output "%s\n") lines;
     Out_channel.flush stdout
   ;;
 
   let error text =
     let padded_name = pad_name "error" in
-    printf "%s%s%s %s\n" black_on_red padded_name reset text;
+    Out_channel.fprintf !output "%s%s%s %s\n" black_on_red padded_name reset text;
     Out_channel.flush stdout
   ;;
 
   let warning text =
     let padded_name = pad_name "warning" in
-    printf "%s%s%s %s\n" black_on_yellow padded_name reset text;
+    Out_channel.fprintf !output "%s%s%s %s\n" black_on_yellow padded_name reset text;
     Out_channel.flush stdout
   ;;
 
   let ok text =
     let padded_name = pad_name "ok" in
-    printf "%s%s%s %s\n" black_on_green padded_name reset text;
+    Out_channel.fprintf !output "%s%s%s %s\n" black_on_green padded_name reset text;
     Out_channel.flush stdout
   ;;
 
   let info text =
     let padded_name = pad_name "info" in
-    printf "%s%s%s %s\n" black_on_white padded_name reset text;
+    Out_channel.fprintf !output "%s%s%s %s\n" black_on_white padded_name reset text;
     Out_channel.flush stdout
   ;;
 
   let usage name =
-    printf
+    Out_channel.fprintf !output
     "%sUsage%s %s [option] ?help\n\
      List of available options:\n\
      \t%sinit%s <project name>\n\
@@ -140,12 +141,11 @@ module Printer_simple = struct
       ~f:(fun acc name -> acc || String.equal str name)
       !already_displayed_skips
   ;;
-  let longest_module : int ref = ref 0
 
   let module_compiling ?(show_cmd = false) name cmd =
-    printf "compiling %s...\n" name;
+    Out_channel.fprintf !output "compiling %s...\n" name;
     match show_cmd with
-    | true -> printf "\t%s\n" cmd
+    | true -> Out_channel.fprintf !output "\t%s\n" cmd
     | false -> ()
     ;
     Out_channel.flush stdout
@@ -155,49 +155,49 @@ module Printer_simple = struct
     match is_already_displayed name with
     | true -> ()
     | false ->
-      printf "no updates in %s, skip\n" name;
+      Out_channel.fprintf !output "no updates in %s, skip\n" name;
       add_to_already_displayed name
     ;
     Out_channel.flush stdout
   ;;
 
   let project_compiling ?(show_cmd = false) (_ : string) cmd =
-    printf "compiling project...\n";
+    Out_channel.fprintf !output "compiling project...\n";
     match show_cmd with
-    | true -> printf "\t%s\n" cmd
+    | true -> Out_channel.fprintf !output "\t%s\n" cmd
     | false -> ()
     ;
     Out_channel.flush stdout
   ;;
 
   let help name lines =
-    printf "%s\n" name;
-    List.iter ~f:(printf "%s\n") lines;
+    Out_channel.fprintf !output "%s\n" name;
+    List.iter ~f:(Out_channel.fprintf !output "%s\n") lines;
     Out_channel.flush stdout
   ;;
 
   let error text =
-    printf "error: %s\n" text;
+    Out_channel.fprintf !output "error: %s\n" text;
     Out_channel.flush stdout
   ;;
 
   let warning text =
-    printf "warning: %s\n" text;
+    Out_channel.fprintf !output "warning: %s\n" text;
     Out_channel.flush stdout
   ;;
 
   let ok text =
-    printf "ok: %s\n" text;
+    Out_channel.fprintf !output "ok: %s\n" text;
     Out_channel.flush stdout
   ;;
 
   let info text =
-    printf "info: %s\n" text;
+    Out_channel.fprintf !output "info: %s\n" text;
     Out_channel.flush stdout
   ;;
 
   let usage name =
-    printf
+    Out_channel.fprintf !output
     "Usage: %s [option] ?help\n\
      List of available options:\n\
      \tinit <project name>\n\
@@ -210,4 +210,4 @@ module Printer_simple = struct
    ;;
 end
 
-include Printer_fancy
+include Printer_simple
