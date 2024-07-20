@@ -43,11 +43,11 @@ let build_cmd app =
     in
     let into_module = Some (Cmd.Fdouble ("-c", app.name ^ ".ml")) in
     let output = Some (Cmd.Fdouble ("-o", "_build/" ^ app.name ^ ".cmx")) in
-    Cmd.empty
-    |> Cmd.add_flags packages
-    |> Cmd.add_flag into_module
-    |> Cmd.add_flag output
-    |> Cmd.to_string
+    Cmd.(empty
+    |> add_flags packages
+    |> add_flag into_module
+    |> add_flag output
+    |> to_string)
 ;;
 
 let rec compile ?(force = false) ?(show_cmd = false) ?(already_compiled = []) a =

@@ -45,11 +45,11 @@ let build_cmd proj =
   let modules =
     List.fold ~init:"" ~f:(fun a m -> a ^ m.name ^ ".cmx" ^ " ") modules_sorted
   in
-  Cmd.empty
-  |> Cmd.add_flags packages
-  |> Cmd.add_flag output
-  |> Cmd.add_flag (Some (Cmd.Fsingle (modules ^ proj.main.name ^ ".cmx")))
-  |> Cmd.to_string
+  Cmd.(empty
+  |> add_flags packages
+  |> add_flag output
+  |> add_flag (Some (Fsingle (modules ^ proj.main.name ^ ".cmx")))
+  |> to_string)
 ;;
 
 let compile ?(force = false) ?(show_cmd = false) proj =
@@ -235,27 +235,30 @@ let restore ?channel () =
 
 let init name =
   let open Printf in
-  let info = sprintf "creating project at %s/%s" (Unix.getcwd ()) name in
+  let open Unix in
+  let info = sprintf "creating project at %s/%s" (getcwd ()) name in
   Printer.info info;
   let perms = 0o777 in
-  Unix.mkdir name perms;
-  Unix.mkdir (name ^ "/_build") perms;
+  mkdir name perms;
+  mkdir (name ^ "/_build") perms;
+  mkdir (name ^ "/_test") perms;
   let cbt_contents =
     sprintf
       "# module ; relies on modules ; uses external libs\n%s ; _ ; _"
       name
   in
   let file_contents = "let () = print_endline \"Hello, World!\"" in
-  let proj_channel = Out_channel.create (name ^ filename) in
-  Out_channel.output_string proj_channel cbt_contents;
-  Out_channel.close proj_channel;
-  let file_channel = Out_channel.create (name ^ "/" ^ name ^ ".ml") in
-  Out_channel.output_string file_channel file_contents
+  let open Out_channel in
+  let proj_channel = create (name ^ filename) in
+  output_string proj_channel cbt_contents;
+  close proj_channel;
+  let file_channel = create (name ^ "/" ^ name ^ ".ml") in
+  output_string file_channel file_contents
 ;;
 
 let drop_merlin proj =
   Printer.info "creating .merlin file...";
   let packages = String.concat ~sep:" " @@ App.get_packages proj.main in
-  let contents = "S .\nB _build\n\nPKG " ^ packages in
+  let contents = "S .\nS _test\nB _build\n\nPKG " ^ packages in
   Out_channel.write_all ".merlin" ~data:contents
 ;;
