@@ -48,7 +48,7 @@ let parse_error_message msg offset =
 let test_app ?(show = false) app =
   let open App in
   let open Printf in
-  let test_filename = sprintf "_test/%s.ml" app.name in
+  let test_filename = sprintf "_test/%s_test.ml" app.name in
   match Unix.access test_filename [ Unix.F_OK ] with
   | () -> begin
     Printer.info ("testing " ^ app.name);
