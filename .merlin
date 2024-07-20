@@ -1,4 +1,5 @@
 S .
+S _test
 B _build
 
-PKG stdio base re unix
+PKG unix stdio re base

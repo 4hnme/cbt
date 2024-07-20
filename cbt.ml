@@ -5,47 +5,8 @@ let proj_file = "./proj.cbt"
 
 let () =
   match List.of_array (Sys.get_argv ()) with
-  | _ :: "init" :: "help" :: [] ->
-    Printer.help
-      "init"
-      [ "creates a new project directory. template is not custimizible yet" ]
-  | _ :: "restore" :: "help" :: [] ->
-    Printer.help
-      "restore"
-      [ "creates a proj.cbt file in current directory."
-      ; "might break stuff, to be used with caution"
-      ; "use \"restore to-stdout\" to print instead of writing into a file"
-      ]
-  | _ :: "install" :: "help" :: [] ->
-    Printer.help
-      "install"
-      [ "rebuild project and copies executable file into /usr/bin directory by default."
-      ; "you can specify installation path by setting \"CBT_INSTALL_PATH\" environment variable\n"
-      ]
-  | _ :: "drop-merlin" :: "help" :: [] ->
-    Printer.help
-      "drop-merlin"
-       [ "create a .merlin file in project directory for better lsp integration."
-       ; "in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command"
-       ]
-  | _ :: "build" :: "help" :: [] ->
-    Printer.help
-       "build"
-       [ "tries to compile project \"softly\". usually breaks, hopefully now it works properly."
-       ; "use \"build show\" to show generated build commands during compilation"
-       ]
-  | _ :: "test" :: "help" :: [] ->
-    Printer.help
-       "test"
-       [ "run tests for your project."
-       ; "warning: very-very early development. run at your own risk"
-       ]
-  | _ :: "force-build" :: "help" :: [] ->
-    Printer.help
-       "force-build"
-       [ "simply rebuilds whole project."
-       ; "use \"force-build show\" to show generated build commands during compilation"
-       ]
+  | name :: command :: "help" :: [] ->
+    Printer.help command
   | _ :: "init" :: name :: [] -> Project.init name
   | _ :: "restore" :: [] -> Project.restore ()
   | _ :: "restore" :: "to-stdout" :: [] -> Project.restore ~channel:stdout ()

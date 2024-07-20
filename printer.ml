@@ -1,20 +1,49 @@
 open Base
 open Stdio
+open Out_channel
 
 let output = ref stdout
 let set_output chan = output := chan
 let longest_module = ref 7
 
+let init_msg =
+  [ "creates a new project directory. template is not custimizible yet" ]
+let restore_msg =
+  [ "creates a proj.cbt file in current directory."
+  ; "might break stuff, to be used with caution"
+  ; "use \"restore to-stdout\" to print instead of writing into a file"
+  ]
+let install_msg =
+  [ "rebuild project and copies executable file into /usr/bin directory by default."
+  ; "you can specify installation path by setting \"CBT_INSTALL_PATH\" environment variable\n"
+  ]
+let drop_merlin_msg =
+  [ "create a .merlin file in project directory for better lsp integration."
+  ; "in addition, you will have to pass \"--fallback-read-dot-merlin\" flag to ocamllsp command"
+  ]
+let build_msg =
+  [ "tries to compile project \"softly\". usually breaks, hopefully now it works properly."
+  ; "use \"build show\" to show generated build commands during compilation"
+  ]
+let test_msg =
+  [ "run tests for your project."
+  ; "warning: very-very early development. run at your own risk"
+  ]
+let force_build_msg =
+  [ "simply rebuilds whole project."
+  ; "use \"force-build show\" to show generated build commands during compilation"
+  ]
+
 module type PRINTER = sig
   val module_compiling : ?show_cmd:bool -> string -> string -> unit
   val module_skip : string -> unit
   val project_compiling : ?show_cmd:bool -> string -> string -> unit
-  val help : string -> string list -> unit
+  val usage : string -> unit
+  val help : ?fallback_name:string -> string -> unit
   val error : string -> unit
   val warning : string -> unit
   val ok : string -> unit
   val info : string -> unit
-  val usage : string -> unit
 end
 
 module Printer_fancy : PRINTER = struct
@@ -84,9 +113,40 @@ module Printer_fancy : PRINTER = struct
     Out_channel.flush stdout
   ;;
 
-  let help name lines =
-    Out_channel.fprintf !output "%s%s%s\n" black_on_white name reset;
-    List.iter ~f:(Out_channel.fprintf !output "%s\n") lines;
+  let usage name =
+    Out_channel.fprintf !output
+    "%sUsage%s %s [option] ?help\n\
+     List of available options:\n\
+     \t%sinit%s <project name>\n\
+     \t%sbuild\n\
+     \ttest\n\
+     \tforce-build\n\
+     \tinstall\n\
+     \tdrop-merlin\n
+     \trestore%s\n"
+   black_on_white reset name bold reset bold reset
+   ;;
+
+  let help ?(fallback_name = "cbt") command =
+    Out_channel.fprintf !output "%s%s%s\n" black_on_white command reset;
+    match command with
+    | "init" ->
+      List.iter ~f:(output_line !output) init_msg
+    | "restore" ->
+      List.iter ~f:(output_line !output) restore_msg
+    | "install" ->
+      List.iter ~f:(output_line !output) install_msg
+    | "drop-merlin" ->
+      List.iter ~f:(output_line !output) drop_merlin_msg
+    | "build" ->
+      List.iter ~f:(output_line !output) build_msg
+    | "test" ->
+      List.iter ~f:(output_line !output) test_msg
+    | "force-build" ->
+      List.iter ~f:(output_line !output) force_build_msg
+    | _ ->
+      usage fallback_name
+    ;
     Out_channel.flush stdout
   ;;
 
@@ -113,20 +173,6 @@ module Printer_fancy : PRINTER = struct
     Out_channel.fprintf !output "%s%s%s %s\n" black_on_white padded_name reset text;
     Out_channel.flush stdout
   ;;
-
-  let usage name =
-    Out_channel.fprintf !output
-    "%sUsage%s %s [option] ?help\n\
-     List of available options:\n\
-     \t%sinit%s <project name>\n\
-     \t%sbuild\n\
-     \ttest\n\
-     \tforce-build\n\
-     \tinstall\n\
-     \tdrop-merlin\n
-     \trestore%s\n"
-   black_on_white reset name bold reset bold reset
-   ;;
 end
 
 module Printer_simple = struct
@@ -171,9 +217,40 @@ module Printer_simple = struct
     Out_channel.flush stdout
   ;;
 
-  let help name lines =
-    Out_channel.fprintf !output "%s\n" name;
-    List.iter ~f:(Out_channel.fprintf !output "%s\n") lines;
+  let usage name =
+    Out_channel.fprintf !output
+    "Usage: %s [option] ?help\n\
+     List of available options:\n\
+     \tinit <project name>\n\
+     \tbuild\n\
+     \ttest\n\
+     \tforce-build\n\
+     \tinstall\n\
+     \tdrop-merlin\n\
+     \trestore\n"
+   name
+   ;;
+
+  let help ?(fallback_name = "cbt") command =
+    Out_channel.fprintf !output "%s\n" command;
+    match command with
+    | "init" ->
+      List.iter ~f:(output_line !output) init_msg
+    | "restore" ->
+      List.iter ~f:(output_line !output) restore_msg
+    | "install" ->
+      List.iter ~f:(output_line !output) install_msg
+    | "drop-merlin" ->
+      List.iter ~f:(output_line !output) drop_merlin_msg
+    | "build" ->
+      List.iter ~f:(output_line !output) build_msg
+    | "test" ->
+      List.iter ~f:(output_line !output) test_msg
+    | "force-build" ->
+      List.iter ~f:(output_line !output) force_build_msg
+    | _ ->
+      usage fallback_name
+    ;
     Out_channel.flush stdout
   ;;
 
@@ -196,20 +273,6 @@ module Printer_simple = struct
     Out_channel.fprintf !output "info: %s\n" text;
     Out_channel.flush stdout
   ;;
-
-  let usage name =
-    Out_channel.fprintf !output
-    "Usage: %s [option] ?help\n\
-     List of available options:\n\
-     \tinit <project name>\n\
-     \tbuild\n\
-     \ttest\n\
-     \tforce-build\n\
-     \tinstall\n\
-     \tdrop-merlin\n\
-     \trestore\n"
-   name
-   ;;
 end
 
 include Printer_simple
